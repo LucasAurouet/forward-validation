@@ -1,4 +1,4 @@
-# Forward Validation Value-at-Risk 
+# Forward Validation Value-at-Risk :chart_increasing:
 
 > A Python toolkit for **Value at Risk (VaR) estimation, backtesting, and simulation**, developed for the paper *“Learning from the Extremes: Machine Learning Approaches for Rare Event Prediction”*. 
 > This repository implements standard and novel VaR estimation methods, including **MLE** and a **Forward Validation (FV)** approach, and supports multiple volatility models and distributions.
