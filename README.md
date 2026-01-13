@@ -18,13 +18,9 @@
 
 - Data 
 
-- Usage 
+- Usage \& Minimal Reproductible Example
 
-	- Main Source Files
-
-	- Minimal Reproductible Example
-
-- Support Functions
+- Backtests
 
 ---
 
@@ -144,6 +140,12 @@ utils.prepare_data(path) handles:
 
 ---
 
+## Usage
+
+> The repository contains two full scripts, main.py and main_simulation.py, which reproduce the analyses presented in the manuscript. 
+> These scripts perform empirical VaR backtesting on the proprietary dataset and run Monte Carlo simulations to evaluate the Forward Validation estimator. 
+> While they are of primary interest for the paper, users without access to the original data can instead follow the Minimal Reproducible Example (MRE), which demonstrates the full workflow
+
 ### Minimal Reproducible Example
 
 This example shows how to run a simple VaR backtest using a small synthetic dataset.  
@@ -193,6 +195,10 @@ print(f"5% VaR Kupiec test p-value: {kupiec_p:.4f}")
 ```
 
 ## Backtests (utils.py)
+
+> The repository includes several statistical backtests to evaluate the accuracy of VaR forecasts.
+> These tests measure whether the predicted risk levels match the realized returns, both in terms of frequency of violations and their temporal dependence.
+> These backtests are implemented in utils.py and can be applied to any model/distribution combination.
 
 - count_violations(returns, VaR) – number of VaR violations 
 
