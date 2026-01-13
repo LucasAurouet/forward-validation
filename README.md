@@ -1,48 +1,37 @@
-\# Learning from the Extremes: VaR Backtesting Toolkit
+# Learning from the Extremes: VaR Backtesting Toolkit
 
-
-
-A Python toolkit for \*\*Value at Risk (VaR) estimation, backtesting, and simulation\*\*, developed for the paper \*“Learning from the Extremes: Machine Learning Approaches for Rare Event Prediction”\*. This repository implements standard and novel VaR estimation methods, including \*\*MLE\*\* and a \*\*Forward Validation (FV)\*\* approach, and supports multiple volatility models and distributions.
-
-
+> A Python toolkit for **Value at Risk (VaR) estimation, backtesting, and simulation**, developed for the paper *“Learning from the Extremes: Machine Learning Approaches for Rare Event Prediction”*. 
+> This repository implements standard and novel VaR estimation methods, including **MLE** and a **Forward Validation (FV)** approach, and supports multiple volatility models and distributions.
 
 ---
 
-
-
-\## Table of Contents
+## Table of Contents
 
 
 
-\- \[Project Structure](#project-structure)  
+- [Project Structure](#project-structure)  
 
-\- \[Installation](#installation)  
+- [Installation](#installation)  
 
-\- \[Volatility Models (`VolModel`)](#volatility-models-volmodel)  
+- [Volatility Models (`VolModel`)](#volatility-models-volmodel)  
 
-\- \[Distributions (`Distribution`)](#distributions-distribution)  
+- [Distributions (`Distribution`)](#distributions-distribution)  
 
-\- \[Data](#data)  
+- [Data](#data)  
 
-\- \[Usage](#usage)  
+- [Usage](#usage)  
 
-&nbsp; - \[Empirical VaR Backtesting](#empirical-var-backtesting)  
+- [Empirical VaR Backtesting](#empirical-var-backtesting)  
 
-&nbsp; - \[Monte Carlo Simulation](#monte-carlo-simulation)  
+- [Monte Carlo Simulation](#monte-carlo-simulation)  
 
-\- \[Backtesting Functions](#backtesting-functions)  
+- [Backtesting Functions](#backtesting-functions)  
 
-\- \[References](#references)  
-
-
+- [References](#references)  
 
 ---
 
-
-
-\## Project Structure
-
-
+## Project Structure
 
 ├─ data/ # Raw and preprocessed datasets (Excel files)
 
@@ -74,19 +63,15 @@ A Python toolkit for \*\*Value at Risk (VaR) estimation, backtesting, and simula
 
 ├─ main.py # Empirical VaR backtesting script (used in the paper)
 
-├─ main\_simulation.py # Monte Carlo simulation of the FV estimator
+├─ main_simulation.py # Monte Carlo simulation of the FV estimator
 
 └─ README.md
 
+---
 
+## Installation
 
-\## Installation
-
-
-
-1\. Clone the repository:
-
-
+1. Clone the repository:
 
 ```bash
 
@@ -94,84 +79,55 @@ git clone https://github.com/LucasAurouet/forward-validation.git
 
 cd forward-validation
 
-pip install -r requirements.txt
+2. Install requirements
 
+pip install -r requirements.txt
 
 
 Dependencies include:
 
+- numpy
 
+- pandas
 
-numpy
+- scipy
 
-
-
-pandas
-
-
-
-scipy
-
-
-
-matplotlib
-
-
+- matplotlib
 
 openpyxl (for Excel files)
 
+---
 
+## Code
 
 Volatility Models (VolModel)
-
-
 
 All models inherit from BASEModel, which implements:
 
 
 
-Maximum Likelihood Estimation (MLE) → fit\_mle()
+- Maximum Likelihood Estimation (MLE) → fit_mle()
 
+- Forward Validation Estimation (FV) → fit_fv()
 
-
-Forward Validation / Conditional Coverage Estimation (FV) → fit\_fv()
-
-
-
-Value at Risk computation → get\_valueatrisk()
-
+- Value at Risk computation → get_valueatrisk()
 
 
 Available Models
 
-
-
-EWMAModel – Exponentially Weighted Moving Average volatility model.
-
-
-
-GARCHModel – Standard GARCH model.
-
-
-
-GJRGARCHModel – Asymmetric GJR-GARCH model capturing leverage effects.
-
-
+>- EWMAModel – Exponentially Weighted Moving Average volatility model.
+>
+>- GARCHModel – Standard GARCH model.
+>
+>- GJRGARCHModel – Asymmetric GJR-GARCH model capturing leverage effects.
 
 Each model implements:
 
 
 
-get\_variance() → model-specific conditional variance
+- model-specific conditional variance → get_variance()
 
-
-
-init\_params(), init\_bounds(), constraints() → optimization support
-
-
-
-config\_name() → human-readable model name
-
+- optimization support → init_params(), init_bounds(), constraints() → 
 
 
 Distributions (Distribution)
@@ -186,7 +142,7 @@ NormalDistribution
 
 
 
-loglik\_resid(returns, variance, params) → log-likelihood of standardized residuals
+loglik_resid(returns, variance, params) → log-likelihood of standardized residuals
 
 
 
@@ -194,7 +150,7 @@ ppf(q, params) → quantile function for VaR calculation
 
 
 
-random\_draw(mu=0, std=1) → generates a single random draw
+random_draw(mu=0, std=1) → generates a single random draw
 
 
 
@@ -204,83 +160,39 @@ StudentsDistribution
 
 Similar to NormalDistribution but includes degrees-of-freedom for heavy-tailed behavior
 
+---
 
-
-Data
-
-
+## Data
 
 Place raw Excel files in the data/ folder.
 
+utils.prepare_data(path) handles:
 
+- Loading Excel data
 
-utils.prepare\_data(path) handles:
+- Calculating percentage/log returns
 
+- Cleaning missing values
 
+- Constructing portfolios (Index, Commodity, Currency)
 
-Loading Excel data
+- Monte Carlo Simulation (main_simulation.py)
 
+---
 
+## Support Functions (utils.py)
 
-Calculating percentage/log returns
+- count_violations(returns, VaR) – number of breaches
 
+- test_kupiec(returns, VaR, VaR_level) – unconditional coverage
 
+- test_independence(returns, VaR, VaR_level) – conditional coverage
 
-Cleaning missing values
+- test_duration(returns, VaR) – duration-based test (Christoffersen & Pelletier, 2004)
 
+- test_dq(returns, VaR, v_lag, f_lag, VaR_level) – Engle & Manganelli dynamic quantile test
 
-
-Constructing portfolios (Index, Commodity, Currency)
-
-
-
-Monte Carlo Simulation (main\_simulation.py)
-
-
-
-Simulates returns under a given model and distribution.
-
-
-
-Compares MLE vs FV estimator performance using LRCC statistics.
-
-
-
-Conducts grid searches over EWMA lambda parameters.
-
-
-
-Produces histograms and likelihood ratio plots for Monte Carlo validation.
-
-
-
-Support Functions (utils.py)
-
-
-
-count\_violations(returns, VaR) – number of breaches
-
-
-
-test\_kupiec(returns, VaR, VaR\_level) – unconditional coverage
-
-
-
-test\_independence(returns, VaR, VaR\_level) – conditional coverage
-
-
-
-test\_duration(returns, VaR) – duration-based test (Christoffersen \& Pelletier, 2004)
-
-
-
-test\_dq(returns, VaR, v\_lag, f\_lag, VaR\_level) – Engle \& Manganelli dynamic quantile test
-
-
-
-\### Minimal Reproducible Example
-
-
+### Minimal Reproducible Example
 
 This example shows how to run a simple VaR backtest using a small synthetic dataset.  
 
@@ -298,7 +210,7 @@ from src import utils
 
 
 
-\# Generate synthetic returns
+# Generate synthetic returns
 
 np.random.seed(42)
 
@@ -306,13 +218,13 @@ returns = np.random.normal(0, 0.01, 100)  # 100 days of returns
 
 
 
-\# Split into train and test sets
+# Split into train and test sets
 
-train, test = utils.train\_test\_split(returns, train\_size=0.8)
+train, test = utils.train_test_split(returns, train_size=0.8)
 
 
 
-\# Initialize model and distribution
+# Initialize model and distribution
 
 dist = NormalDistribution()
 
@@ -320,27 +232,27 @@ model = EWMAModel(dist)
 
 
 
-\# Fit MLE parameters
+# Fit MLE parameters
 
-model.fit\_mle(train, show=False)
-
-
-
-\# Compute 5% VaR on test set
-
-VaR\_mle = model.get\_valueatrisk(test, model.mle\_params, 0.05)
+model.fit_mle(train, show=False)
 
 
 
-\# Run a simple backtest
+# Compute 5% VaR on test set
 
-kupiec\_p = utils.test\_kupiec(test, VaR\_mle, 0.05)
-
-indep\_p = utils.test\_independence(test, VaR\_mle, 0.05)\[0]
+VaR_mle = model.get_valueatrisk(test, model.mle_params, 0.05)
 
 
 
-print(f"5% VaR Kupiec test p-value: {kupiec\_p:.4f}")
+# Run a simple backtest
 
-print(f"5% VaR Independence test p-value: {indep\_p:.4f}")
+kupiec_p = utils.test_kupiec(test, VaR_mle, 0.05)
+
+indep_p = utils.test_independence(test, VaR_mle, 0.05)[0]
+
+
+
+print(f"5% VaR Kupiec test p-value: {kupiec_p:.4f}")
+
+print(f"5% VaR Independence test p-value: {indep_p:.4f}")
 
