@@ -3,7 +3,29 @@ import pandas as pd
 import scipy as scp
 
 def first_difference(df, how):
-    # computes returns using either percentage change or logarirthmic returns
+    """
+    Compute returns from a DataFrame of prices using either percentage change or logarithmic returns.
+    
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing asset prices. Each column represents an asset, and each row represents a time point.
+    how : str
+        Method for computing returns. Options are:
+        - 'pct' : percentage change returns
+        - 'log' : logarithmic returns
+    
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame of returns with the same columns as `df` and adjusted index 
+        (first row removed).
+    
+    Notes
+    -----
+    - The first row is dropped.
+    - The function scales all returns by 100 for readability.
+    """
     col_names = list(df.columns)
     idx = list(df.index)[1:]
 
@@ -20,6 +42,26 @@ def first_difference(df, how):
 
 
 def make_portfolio(data, asset_type):
+    """
+    Construct a simple equally-weighted portfolio from selected assets in a DataFrame.
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        DataFrame containing return series for multiple assets.
+    asset_type : str
+        Keyword used to select which columns (assets) to include in the portfolio.
+        For example, if `asset_type='Index'`, all columns containing 'Index' in their name will be included.
+
+    Returns
+    -------
+    np.ndarray
+        Array of returns computed as the equally-weighted average of the selected assets. 
+
+    Notes
+    -----
+    - The function searches for the `asset_type` substring in column names to select assets.
+    """
     temp_array = [0] * len(data)
     n_asset = 0
 
@@ -31,9 +73,35 @@ def make_portfolio(data, asset_type):
     return np.array(temp_array) / n_asset
 
 
-def prepare_data(path, returns='pct'):
+def prepare_data(folder_path, returns='pct'):
+    """
+    Load and preprocess financial data from an Excel file, compute returns, 
+    clean missing values, and construct simple portfolios.
+
+    Parameters
+    ----------
+    folder_path : str
+        Path to the folder containing the Excel file `inpAllFle_updated.xlsx`.
+    returns : str, optional, default='pct'
+        Type of returns to compute from price data:
+        - 'pct' : percentage change returns
+        - 'log' : logarithmic returns
+
+    Returns
+    -------
+    pandas.DataFrame
+        Preprocessed DataFrame containing asset returns and portfolio columns:
+        - Original assets after cleaning
+        - Portfolios: 'Index_ptfl', 'Curncy_ptfl', 'Comdty_ptfl', 'Equity_ptfl'
+        Rows with missing data are removed.
+
+    Notes
+    -----
+    - The Excel file `inpAllFle_updated.xlsx` is expected to have dates as the first column 
+      and asset names as column headers.
+    """
     # reads the data from an Excel file and imports it as a pandas DataFrame
-    inpTbl = pd.read_excel(path + r'\inpAllFle_updated.xlsx',
+    inpTbl = pd.read_excel(folder_path + r'\inpAllFle_updated.xlsx',
                            header=0,
                            index_col=0,
                            na_values='null',
@@ -63,14 +131,53 @@ def prepare_data(path, returns='pct'):
     return retTbl
 
 def weibull_pdf(a, b, D):
-    # computes the weibull pdf
+    """
+    Compute the Weibull probability density function (PDF) for given parameters.
+    
+    Parameters
+    ----------
+    a : float or np.ndarray
+        Scale parameter of the Weibull distribution (must be positive).
+    b : float
+        Shape parameter of the Weibull distribution (must be positive).
+    D : float or np.ndarray
+        Value(s) at which to evaluate the PDF (must be non-negative).
+    
+    Returns
+    -------
+    np.ndarray
+        Weibull PDF evaluated at each element of D. Values of 0 are replaced
+        with 1e-6 for numerical stability.
+    
+    Notes
+    -----
+    This function ensures that zero probabilities are replaced with a small
+    positive number to avoid issues in log-likelihood calculations.
+    """
     val = np.array(a ** b * b * D ** (b - 1) * np.exp(-(a * D) ** b))
     val[val == 0] = 1e-6
 
     return val
 
 def weibull_cdf(a, b, D):
-    # computes weibull cdf
+    """
+    Compute the Weibull probability density function (PDF) for given parameters.
+    
+    Parameters
+    ----------
+    see weibull_pdf
+    
+    Returns
+    -------
+    np.ndarray
+        Weibull CDF evaluated at each element of D. Values of 0 are replaced
+        with 1e-6 for numerical stability.
+    
+    Notes
+    -----
+    This function ensures that zero probabilities are replaced with a small
+    positive number to avoid issues in log-likelihood calculations.
+    """
     val = 1 - np.exp(-(a * D) ** b)
 
     if val != 0 and val != 1:
@@ -81,13 +188,39 @@ def weibull_cdf(a, b, D):
         return 1e-6
 
 def test_duration(returns, VaR):
-    violations = count_violations(returns, VaR)
+    """
+    Perform the duration-based VaR backtest.
     
+    This test evaluates the temporal spacing between VaR violations using 
+    a duration-based likelihood approach (Christoffersen & Pelletier, 2004).
+    
+    Parameters
+    ----------
+    returns : np.ndarray
+        Array of asset returns.
+    VaR : np.ndarray
+        Array of Value-at-Risk estimates corresponding to `returns`.
+    
+    Returns
+    -------
+    float
+        p-value of the duration-based test.
+    
+    Notes
+    -----
+    This function internally computes:
+    - Durations between violations (duration)
+    - Negative log-likelihood under a Weibull model (duration_loglik)
+    
+    References
+    ----------
+    Christoffersen, P. and D. Pelletier (2004). Backtesting Value-at-Risk: A Duration-Based Approach. Journal of Financial Econometrics, 2, 84–108
+    """
     def duration(violations):
-        # computes the duration between each violation
-        # also computes the "censored" factors for the first and last observations
-        # see Christoffersen & Pelletier 2004
+        """
+        Compute the durations between VaR violations and censoring indicators for the first and last observations.
 
+        """
         count = 1
         D = []
         C = []
@@ -98,10 +231,8 @@ def test_duration(returns, VaR):
                     C.append(1)
                 else:
                     C.append(0)
-
             if i == violations.shape[0] - 1 and violations[i] == 0:
                 D.append(count)
-
             if violations[i] == 0:
                 count += 1
             else:
@@ -109,14 +240,11 @@ def test_duration(returns, VaR):
                 count = 1
 
         return np.array(D), np.array(C)
-    
-    D, C = duration(violations)
 
     def duration_loglik(params, *args):
-        # computes the log likelihood of observing the durations sequence
-        # see Christiffersen & Pelletier 2004
-
-        # returns the negative log likelihood
+        """
+        Compute the negative log-likelihood for a sequence of durations between VaR violations under a Weibull model.
+        """
         b = params[0]
         D, C = args
         C_1 = C[0]
@@ -131,6 +259,10 @@ def test_duration(returns, VaR):
                   + (1 - C_NT) * np.log(weibull_pdf(a, b, D[-1])))
 
         return -loglik
+    
+    violations = count_violations(returns, VaR)
+    
+    D, C = duration(violations)
 
     opt = scp.optimize.minimize(duration_loglik,
                                 x0=[1.0],
@@ -147,9 +279,41 @@ def test_duration(returns, VaR):
     return 1 - chi2_cdf(X=ratio, k=1)
 
 def test_independence(returns, VaR, VaR_level):
-    # computes the p value for idependence of hits
-    # see Christoffersen 1998
-    # uses the likelihood ratio from markov_loglik
+    """
+    Perform the conditional coverage (independence) test for VaR violations.
+
+    This test evaluates whether VaR violations are independently distributed
+    over time using the likelihood ratio approach described in Christoffersen (1998).
+
+    Parameters
+    ----------
+    returns : np.ndarray
+        Array of asset returns.
+    VaR : np.ndarray or float
+        Corresponding Value-at-Risk estimates. Can be a single value or an array of the same length as `returns`.
+    VaR_level : float
+        The VaR confidence level (e.g., 0.05 for 5% VaR).
+
+    Returns
+    -------
+    p_val : float
+        p-value of the independence test.
+    ll_ratio : float
+        Likelihood ratio statistic computed as the sum of the unconditional and
+        Markov log-likelihoods.
+
+    Notes
+    -----
+    - Internally, the function:
+        1. Counts VaR violations (`count_violations`).
+        2. Computes the binomial log-likelihood (`binomial_loglik`) for unconditional coverage.
+        3. Computes the Markov log-likelihood (`markov_loglik`) for temporal dependence.
+        4. Combines them into a likelihood ratio and calculates the p-value using a chi-squared distribution.
+
+    References
+    ----------
+    Christoffersen, P. (1998). Evaluating Interval Forecasts. International Economic Review, 39(4), 841–862.
+    """
     violations = count_violations(returns, VaR)
     b_loglik = binomial_loglik(violations, VaR_level)
     m_loglik = markov_loglik(violations)
@@ -159,20 +323,90 @@ def test_independence(returns, VaR, VaR_level):
     return p_val, ll_ratio
 
 def count_violations(returns, VaR):
+    """
+    Count the number of Value-at-Risk (VaR) violations.
+    
+    Parameters
+    ----------
+    returns : np.ndarray
+        Array of asset returns.
+    VaR : np.ndarray or float
+        Corresponding Value-at-Risk estimates. Can be a single value or an array of the same length as `returns`.
+    
+    Returns
+    -------
+    np.ndarray
+        Binary array of the same shape as `returns`:
+        - 1 indicates a violation (return < VaR)
+        - 0 indicates no violation
+        """
     return (returns < VaR).astype('int')
 
 def chi2_pdf(X, k):
-    # computes the chi2 pdf
+    """Compute the probability density function (PDF) of the chi-squared distribution.
+
+    Parameters
+    ----------
+    X : float or np.ndarray
+        Value(s) at which to evaluate the chi-squared PDF.
+    k : int or float
+        Degrees of freedom of the chi-squared distribution.
+
+    Returns
+    -------
+    float or np.ndarray
+        The PDF value(s) of the chi-squared distribution at X.
+    """
     gamma = scp.special.gamma(k / 2)
 
     return (1 / (2 ** (k / 2) * gamma)) * X ** (k / 2 - 1) * np.exp(-X / 2)
 
 
 def chi2_cdf(X, k):
+    """
+    Compute the cumulative distribution function (CDF) of the chi-squared distribution.
+
+    Parameters
+    ----------
+    X : float or np.ndarray
+        Value(s) at which to evaluate the chi-squared CDF.
+    k : int or float
+        Degrees of freedom of the chi-squared distribution.
+
+    Returns
+    -------
+    float or np.ndarray
+        The cumulative probability P(X' <= X) for a chi-squared random variable X' with k degrees of freedom.
+    """
     return scp.special.gammainc(k / 2, X / 2)
 
 
 def test_kupiec(returns, VaR, VaR_level):
+    """
+    Perform the Kupiec (1995) unconditional coverage test for VaR violations.
+    
+    This test evaluates whether the observed frequency of VaR violations
+    matches the expected frequency given the confidence level.
+    
+    Parameters
+    ----------
+    returns : np.ndarray
+        Array of asset returns.
+    VaR : np.ndarray or float
+        Corresponding Value-at-Risk estimates. Can be a scalar or an array of the same length as `returns`.
+    VaR_level : float
+        The VaR confidence level (e.g., 0.05 for 5% VaR).
+    
+    Returns
+    -------
+    float
+        p-value of the Kupiec unconditional coverage test.
+    
+    References
+    ----------
+    Kupiec, P. (1995). Techniques for Verifying the Accuracy of Risk Measurement Models. 
+    The Journal of Derivatives, 3(2), 73–84.
+    """
     violations = count_violations(returns, VaR)
     ll_ratio = binomial_loglik(violations, VaR_level)
 
@@ -180,7 +414,42 @@ def test_kupiec(returns, VaR, VaR_level):
 
 
 def test_dq(returns, VaR, v_lag, f_lag, VaR_level):
-    # Engle & Manganelli test
+    """
+    Perform the Dynamic Quantile (DQ) test of Engle & Manganelli (2004) for VaR violations.
+
+    The DQ test evaluates whether VaR violations are independent over time
+    and whether the VaR model captures conditional dynamics in the returns.
+    It is a regression-based test using lagged violations and VaR forecasts.
+
+    Parameters
+    ----------
+    returns : np.ndarray
+        Array of asset returns.
+    VaR : np.ndarray
+        Array of Value-at-Risk estimates corresponding to `returns`.
+    v_lag : int
+        Number of lagged violation terms included in the regression.
+    f_lag : int
+        Number of lagged VaR forecast terms included in the regression.
+    VaR_level : float
+        The VaR confidence level (e.g., 0.05 for 5% VaR).
+
+    Returns
+    -------
+    float
+        p-value of the DQ test. Values close to 1 indicate that the null hypothesis 
+        of correct conditional coverage is not rejected.
+
+    Notes
+    -----
+    - If a numerical issue occurs (e.g., matrix inversion fails), the function
+      returns a small default p-value of 1e-6.
+
+    References
+    ----------
+    Engle, R., & Manganelli, S. (2004). CAViaR: Conditional Autoregressive Value at Risk
+    by Regression Quantiles. Journal of Business & Economic Statistics, 22(4), 367–381.
+    """
     violations = count_violations(returns, VaR)
     p, q, n = v_lag, f_lag, violations.shape[0]
     pq = max(p, q - 1)
@@ -209,7 +478,31 @@ def test_dq(returns, VaR, v_lag, f_lag, VaR_level):
 
 
 def markov_loglik(data):
+
+    """
+    Compute the log-likelihood ratio for a first-order Markov chain of VaR violations.
+
+    This function evaluates the independence of VaR violations over time by comparing 
+    the likelihood of the observed sequence under a Markov model (dependent violations) 
+    versus a Bernoulli model (independent violations).
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Binary array indicating VaR violations:
+        - 1 if a violation occurs (return < VaR)
+        - 0 otherwise
+        Shape should be (n_observations,).
+
+    Returns
+    -------
+    float
+        Log-likelihood ratio statistic
     
+    Notes
+    -----
+    - Adds a small constant (1e-6) to counts for numerical stability.
+    """
     prev_state = data[:-1]
     next_state = data[1:]
     
@@ -240,14 +533,29 @@ def markov_loglik(data):
 
 
 def binomial_loglik(data, p):
+    """
+    Compute the log-likelihood ratio for a sequence of VaR violations under a binomial model.
 
-    # computes the likelihood ratio of observing 'k' violations
-    # assuming the data comes from a B(n, VaR_level) distribution
-    # versus the likelihood that the data comes from a B(n , k/n) distribution
-    # formula for the likelihood of a Binomial distribution can be found here:
-    # https://en.wikipedia.org/wiki/Binomial_distribution
+    Parameters
+    ----------
+    data : np.ndarray
+        Binary array indicating VaR violations:
+        - 1 if a violation occurs (return < VaR)
+        - 0 otherwise
+        Shape should be (n_observations,).
+    p : float
+        The expected probability of a violation under the null hypothesis (e.g., 0.05 for 5% VaR).
 
-    # returns the log-likelihood ratio lL(B(n, VaR_level)) / lL(B(n, k/n))
+    Returns
+    -------
+    float
+        Log-likelihood ratio statistic. A higher value indicates a greater deviation 
+        from the expected violation probability.
+
+    Notes
+    -----
+    - Uses a small numerical safeguard to avoid log(0) issues.
+    """
     n = data.shape[0]
     k = max(int(sum(data)), 1e-6)
     # we use the log-likelihood to avoid numerical under/over flow
@@ -258,7 +566,7 @@ def binomial_loglik(data, p):
     return -2 * (h0 - h1)
 
 def train_test_split(returns, train_size):
-    # splits the return series into a training and testing set
+    """Split a return series into train and test sets."""
     split_idx = int(train_size * returns.shape[0])
     train = returns[: split_idx]
     test = returns[split_idx:]
