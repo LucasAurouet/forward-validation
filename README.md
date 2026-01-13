@@ -191,6 +191,7 @@ kupiec_p = utils.test_kupiec(test, VaR, 0.05)
 print(f"5% VaR Kupiec test p-value: {kupiec_p:.4f}")
 
 ```
+---
 
 ## Backtests (utils.py)
 
