@@ -85,37 +85,35 @@ Dependencies include:
 
 **Volatility Models (VolModel)**
 
-All models inherit from BASEModel, which implements:
+| Model           | Description |
+|-----------------|-------------|
+| `EWMAModel`     | Exponentially Weighted Moving Average volatility model |
+| `GARCHModel`    | Standard GARCH model |
+| `GJRGARCHModel` | Asymmetric GARCH model capturing leverage effects |
 
-- Maximum Likelihood Estimation (MLE) → fit_mle()
+Each model implements:
 
-- Forward Validation Estimation (FV) → fit_fv()
+- model-specific conditional variance --> `get_variance()`
 
-- Value at Risk computation → get_valueatrisk()
+- optimization support --> `init_params()`, `init_bounds()`, `constraints()` 
 
-> Available Models
->
-> - EWMAModel – Exponentially Weighted Moving Average volatility model.
->
-> - GARCHModel – Standard GARCH model.
->
-> - GJRGARCHModel – Asymmetric GJR-GARCH model capturing leverage effects.
->
-> Each model implements:
->
-> - model-specific conditional variance → get_variance()
->
-> - optimization support → init_params(), init_bounds(), constraints() → 
+All models inherit from `BASEModel`, which implements:
+
+- Maximum Likelihood Estimation (MLE) --> `fit_mle()`
+
+- Forward Validation Estimation (FV) --> `fit_fv()`
+
+- Value at Risk computation --> `get_valueatrisk()`
 
 **Distributions (Distribution)**
 
 These classes define the probability distributions for residuals and implement basic calculations.
 
-- loglik_resid(returns, variance, params) → log-likelihood of standardized residuals
+- `loglik_resid(returns, variance, params)` --> log-likelihood of standardized residuals
 
-- ppf(q, params) → quantile function for VaR calculation
+- `ppf(q, params)` --> quantile function for VaR calculation
 
-- random_draw(mu=0, std=1) → generates a single random draw
+- `random_draw(mu=0, std=1)` --> generates a single random draw
 
 ---
 
@@ -126,7 +124,7 @@ These classes define the probability distributions for residuals and implement b
 > This mock dataset preserves the structure of the original data (dates, asset columns, portfolios) and can be used to run the example scripts and minimal reproducible examples.
 > Users with access to the original data can replace the mock files in data/ with the real datasets to reproduce the full results.
 
-utils.prepare_data(path) handles:
+`utils.prepare_data(path)` handles:
 
 - Loading Excel data
 
@@ -200,12 +198,12 @@ print(f"5% VaR Kupiec test p-value: {kupiec_p:.4f}")
 > These tests measure whether the predicted risk levels match the realized returns, both in terms of frequency of violations and their temporal dependence.
 > These backtests are implemented in utils.py and can be applied to any model/distribution combination.
 
-- count_violations(returns, VaR) – number of VaR violations 
+- `count_violations(returns, VaR)` – number of VaR violations 
 
-- test_kupiec(returns, VaR, VaR_level) – unconditional coverage test
+- `test_kupiec(returns, VaR, VaR_level)` – unconditional coverage test
 
-- test_independence(returns, VaR, VaR_level) – conditional coverage test
+- `test_independence(returns, VaR, VaR_level)` – conditional coverage test
 
-- test_duration(returns, VaR) – duration-based test
+- `test_duration(returns, VaR)` – duration-based test
 
-- test_dq(returns, VaR, v_lag, f_lag, VaR_level) – Engle & Manganelli dynamic quantile test
+- `test_dq(returns, VaR, v_lag, f_lag, VaR_level)` – Engle & Manganelli dynamic quantile test
