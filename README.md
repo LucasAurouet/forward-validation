@@ -20,11 +20,9 @@
 
 - Usage 
 
-	- Empirical VaR Backtesting (from the main paper)
+	- Main Source Files
 
-	- Monte Carlo Simulation
-
-	- Minimal Reproductibe Example
+	- Minimal Reproductible Example
 
 - Support Functions
 
@@ -32,39 +30,27 @@
 
 ## Project Structure
 
+```
+
 ├─ data/ # Raw and preprocessed datasets (Excel files)
-
 ├─ src/
-
 │ ├─ Distribution/ # Probability distributions
-
 │ │ ├─ NormalDistribution.py
-
 │ │ └─ StudentsDistribution.py
-
 │ │
-
 │ ├─ VolModel/ # Volatility models
-
 │ │ ├─ BASEModel.py # parent class for all models
-
 │ │ ├─ EWMAModel.py # Model classes
-
 │ │ ├─ GARCHModel.py
-
 │ │ └─ GJRGARCHModel.py
-
 │ │
-
 │ └─ utils.py # Preprocessing, backtesting, and support functions
-
 │
-
 ├─ main.py # Empirical VaR backtesting script (used in the paper)
-
 ├─ main_simulation.py # Monte Carlo simulation of the FV estimator
-
 └─ README.md
+
+```
 
 ---
 
@@ -76,9 +62,11 @@
 
 git clone https://github.com/LucasAurouet/forward-validation.git
 
-cd forward-validation
+```
 
 2. Install requirements
+
+```bash
 
 pip install -r requirements.txt
 
@@ -145,9 +133,13 @@ These classes define the probability distributions for residuals and implement b
 utils.prepare_data(path) handles:
 
 - Loading Excel data
+
 - Calculating percentage/log returns
+
 - Cleaning missing values
+
 - Constructing portfolios (Index, Commodity, Currency)
+
 - Monte Carlo Simulation (main_simulation.py)
 
 ---
@@ -182,32 +174,32 @@ dist = NormalDistribution()
 
 model = EWMAModel(dist)
 
-# Fit MLE parameters
+# Estimate the parameters using FV
 
-model.fit_mle(train, show=False)
+VaR_level = 0.05
+
+model.fit_fv(train, VaR_level, show=True)
 
 # Compute 5% VaR on test set
 
-VaR_mle = model.get_valueatrisk(test, model.mle_params, 0.05)
+VaR = model.get_valueatrisk(test, model.fv_params, VaR_level)
 
 # Run a simple backtest
 
-kupiec_p = utils.test_kupiec(test, VaR_mle, 0.05)
-
-indep_p = utils.test_independence(test, VaR_mle, 0.05)[0]
+kupiec_p = utils.test_kupiec(test, VaR, 0.05)
 
 print(f"5% VaR Kupiec test p-value: {kupiec_p:.4f}")
 
-print(f"5% VaR Independence test p-value: {indep_p:.4f}")
+```
 
-## Support Functions (utils.py)
+## Backtests (utils.py)
 
-- count_violations(returns, VaR) – number of breaches
+- count_violations(returns, VaR) – number of VaR violations 
 
-- test_kupiec(returns, VaR, VaR_level) – unconditional coverage
+- test_kupiec(returns, VaR, VaR_level) – unconditional coverage test
 
-- test_independence(returns, VaR, VaR_level) – conditional coverage
+- test_independence(returns, VaR, VaR_level) – conditional coverage test
 
-- test_duration(returns, VaR) – duration-based test (Christoffersen & Pelletier, 2004)
+- test_duration(returns, VaR) – duration-based test
 
 - test_dq(returns, VaR, v_lag, f_lag, VaR_level) – Engle & Manganelli dynamic quantile test
