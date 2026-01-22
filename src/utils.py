@@ -100,7 +100,7 @@ def prepare_data(folder_path, returns='pct'):
     - The Excel file `inpAllFle_updated.xlsx` is expected to have dates as the first column 
       and asset names as column headers.
     """
-    # reads the data from an Excel file and imports it as a pandas DataFrame
+    # Reads the data from an Excel file and imports it as a pandas DataFrame
     inpTbl = pd.read_excel(folder_path + r'\inpAllFle_updated.xlsx',
                            header=0,
                            index_col=0,
